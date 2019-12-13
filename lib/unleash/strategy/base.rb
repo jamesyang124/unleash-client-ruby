@@ -1,6 +1,6 @@
 module Unleash
   module Strategy
-    class NotImplemented < Exception
+    class NotImplemented < RuntimeError
     end
 
     class Base
@@ -8,7 +8,7 @@ module Unleash
         raise NotImplemented, "Strategy is not implemented"
       end
 
-      def is_enabled?(params = {}, context = nil)
+      def is_enabled?(_params = {}, _context = nil)
         raise NotImplemented, "Strategy is not implemented"
       end
     end

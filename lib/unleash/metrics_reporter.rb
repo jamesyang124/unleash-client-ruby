@@ -5,7 +5,6 @@ require 'json'
 require 'time'
 
 module Unleash
-
   class MetricsReporter
     attr_accessor :last_time
 
@@ -15,7 +14,11 @@ module Unleash
 
     def generate_report
       now = Time.now
-      start, stop, self.last_time = self.last_time, now, now
+
+      start = self.last_time
+      stop  = now
+      self.last_time = now
+
       report = {
         'appName': Unleash.configuration.app_name,
         'instanceId': Unleash.configuration.instance_id,
@@ -25,37 +28,21 @@ module Unleash
           'toggles': Unleash.toggle_metrics.features
         }
       }
-
       Unleash.toggle_metrics.reset
-      return report
+
+      report
     end
 
     def send
       Unleash.logger.debug "send() Report"
 
-      generated_report = self.generate_report()
+      response = Unleash::Util::Http.post(Unleash.configuration.client_metrics_url, self.generate_report.to_json)
 
-      uri = URI(Unleash.configuration.client_metrics_url)
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true if uri.scheme == 'https'
-      http.open_timeout = Unleash.configuration.timeout # in seconds
-      http.read_timeout = Unleash.configuration.timeout # in seconds
-
-      headers = (Unleash.configuration.get_http_headers || {}).dup
-      headers['Content-Type'] = 'application/json'
-      request = Net::HTTP::Post.new(uri.request_uri, headers)
-      request.body = generated_report.to_json
-
-      Unleash.logger.debug "Report to send: #{request.body}"
-
-      response = http.request(request)
-
-      if ['200','202'].include? response.code
+      if ['200', '202'].include? response.code
         Unleash.logger.debug "Report sent to unleash server sucessfully. Server responded with http code #{response.code}"
       else
         Unleash.logger.error "Error when sending report to unleash server. Server responded with http code #{response.code}."
       end
-
     end
   end
 end

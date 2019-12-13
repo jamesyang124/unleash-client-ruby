@@ -21,7 +21,7 @@ Leverage the [Unleash Server](https://github.com/Unleash/unleash) for powerful f
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'unleash', '~> 0.1.5'
+gem 'unleash', '~> 0.1.6'
 ```
 
 And then execute:
@@ -59,6 +59,7 @@ Argument | Description | Required? |  Type |  Default Value|
 `url`      | Unleash server URL. | Y | String | N/A |
 `app_name` | Name of your program. | Y | String | N/A |
 `instance_id` | Identifier for the running instance of program. Important so you can trace back to where metrics are being collected from. **Highly recommended be be set.** | N | String | random UUID |
+`environment` | Environment the program is running on. Could be for example `prod` or `dev`. Not yet in use. | N | String | `default` |
 `refresh_interval` | How often the unleash client should check with the server for configuration changes. | N | Integer |  15 |
 `metrics_interval` | How often the unleash client should send metrics to server. | N | Integer | 10 |
 `disable_client` | Disables all communication with the Unleash server, effectively taking it *offline*. If set, `is_enabled?` will always answer with the `default_value` and configuration validation is skipped. Defeats the entire purpose of using unleash, but can be useful in when running tests. | N | Boolean | `false` |
@@ -67,7 +68,7 @@ Argument | Description | Required? |  Type |  Default Value|
 `timeout` | How long to wait for the connection to be established or wait in reading state (open_timeout/read_timeout) | N | Integer | 30 |
 `retry_limit` | How many consecutive failures in connecting to the Unleash server are allowed before giving up. | N | Integer | 1 |
 `backup_file` | Filename to store the last known state from the Unleash server. Best to not change this from the default. | N | String | `Dir.tmpdir + "/unleash-#{app_name}-repo.json` |
-`logger` | Specify a custom `Logger` class to handle logs from the client. | N | Class | `Logger.new(STDOUT)` |
+`logger` | Specify a custom `Logger` class to handle logs for the Unleash client. | N | Class | `Logger.new(STDOUT)` |
 `log_level` | Change the log level for the `Logger` class. Constant from `Logger::Severity`. | N | Constant | `Logger::ERROR` |
 
 For in a more in depth look, please see `lib/unleash/configuration.rb`.
@@ -104,6 +105,7 @@ Unleash.configure do |config|
   config.app_name = Rails.application.class.parent.to_s
   # config.instance_id = "#{Socket.gethostname}"
   config.logger   = Rails.logger
+  config.environment = Rails.env
 end
 
 UNLEASH = Unleash::Client.new
@@ -122,6 +124,7 @@ on_worker_boot do
   Unleash.configure do |config|
     config.url      = 'http://unleash.herokuapp.com/api'
     config.app_name = Rails.application.class.parent.to_s
+    config.environment = Rails.env
   end
   Rails.configuration.unleash = Unleash::Client.new
 end
